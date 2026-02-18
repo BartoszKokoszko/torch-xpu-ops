@@ -827,7 +827,8 @@ struct IndexPutDeterministicKernelFunctor {
       return;
 
     int64_t idx = sorted_indices_[id.glb_batch];
-    if (id.glb_batch != 0 && idx == sorted_indices_[id.glb_batch - 1])
+    if (id.glb_batch != cfg_.problem_batch_ - 1 &&
+        idx == sorted_indices_[id.glb_batch + 1])
       return;
 
     int64_t pi_ = id.glb_problem;
@@ -839,16 +840,21 @@ struct IndexPutDeterministicKernelFunctor {
     accscalar_t acc;
     if (accumulate_)
       acc = c10::load(&self_[s_gid]);
-    for (int64_t inner_idx = id.glb_batch;
-         inner_idx < cfg_.problem_batch_ && sorted_indices_[inner_idx] == idx;
+
+    int64_t start_idx = id.glb_batch;
+    while (start_idx > 0 && sorted_indices_[start_idx - 1] == idx)
+      --start_idx;
+
+    for (int64_t inner_idx = start_idx;
+         inner_idx <= id.glb_batch && sorted_indices_[inner_idx] == idx;
          inner_idx++) {
       int64_t idx_orig = indices_[inner_idx];
       int64_t v_gid = idx_orig * stride_ + v_stride;
       if (accumulate_) {
         acc += (accscalar_t)c10::load(&value_[v_gid]);
       } else {
+        // For non-accumulate, keep overwriting — last iteration wins
         self_[s_gid] = c10::load(&value_[v_gid]);
-        break;
       }
     }
     if (accumulate_)
