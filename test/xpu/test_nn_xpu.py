@@ -17868,8 +17868,8 @@ if __name__ == '__main__':
 
     # reference issue: https://github.com/pytorch/pytorch/issues/111484
     @onlyOn(["cuda", "xpu"])
-    @largeTensorTest("42GB", "cuda")
-    @largeTensorTest("42GB", "xpu")
+    #@largeTensorTest("42GB", "cuda")
+    #@largeTensorTest("42GB", "xpu")
     def test_softmax_forward_64bit_indexing(self, device):
         batch_size = 70
         seq_len = 2048
@@ -17894,8 +17894,8 @@ if __name__ == '__main__':
         )
 
     @onlyOn(["cuda", "xpu"])
-    @largeTensorTest("20GB", "cuda")
-    @largeTensorTest("20GB", "xpu")
+    #@largeTensorTest("20GB", "cuda")
+    #@largeTensorTest("20GB", "xpu")
     def test_softmax_backward_64bit_indexing(self, device):
         for numel in (2147483650, 2147483650 + 1):
             x = torch.ones([1, 1, numel], device=device, dtype=torch.float16)
