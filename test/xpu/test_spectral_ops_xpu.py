@@ -103,6 +103,15 @@ def _test_reference_1d(self, device, dtype, op):
 
 TestFFT.test_reference_1d = _test_reference_1d
 
+# XPU backend upcasts half/chalf FFT inputs instead of enforcing cuFFT-style
+# power-of-two restrictions, so the upstream half/chalf error test is not
+# applicable here.
+# Half/Chalf promotion:
+# https://github.com/intel/torch-xpu-ops/commit/2ce9db88c67ea2ca55af559f0f342ba3d9ee266b
+TestFFT.test_fft_half_and_chalf_not_power_of_two_error = unittest.skip(
+    "XPU FFT half/chalf allows non-power-of-two sizes (upcasts instead)."
+)(TestFFT.test_fft_half_and_chalf_not_power_of_two_error)
+
 instantiate_device_type_tests(TestFFT, globals(), only_for=("xpu"), allow_xpu=True)
 
 
