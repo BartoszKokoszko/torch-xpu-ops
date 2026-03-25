@@ -488,6 +488,13 @@ def __tunableop_ctx(self):
 with XPUPatchForImport(False):
     from test_linalg import TestLinalg
 
+# Skip Float8_e4m3fnuz rowwise scaled GEMM on XPU: oneDNN lacks FNUZ support.
+# Note: the primary CUDA test is already limited to ROCm (onlyCUDA + skipCUDAIfNotRocm),
+# so this XPU variant is intentionally skipped for the same unsupported dtype.
+TestLinalg.test_rowwise_scaled_gemm_numerics_tunableop = unittest.skip(
+    "XPU/oneDNN does not support Float8_e4m3fnuz (CUDA primary is ROCm-only)"
+)(TestLinalg.test_rowwise_scaled_gemm_numerics_tunableop)
+
 TestLinalg.test_large_bmm_mm_backward = large_bmm_mm_backward
 TestLinalg.test_large_bmm_backward = large_bmm_backward
 TestLinalg.test_preferred_blas_library = preferred_blas_library
