@@ -1007,7 +1007,23 @@ class ReproTests(torch._dynamo.test_case.TestCase):
         try:
             from .utils import install_guard_manager_testing_hook
         except ImportError:
-            from utils import install_guard_manager_testing_hook
+            try:
+                from utils import install_guard_manager_testing_hook
+            except ImportError:
+                repo_utils = os.path.abspath(
+                    os.path.join(
+                        os.path.dirname(__file__), "../../../../test/dynamo/utils.py"
+                    )
+                )
+                spec = importlib.util.spec_from_file_location(
+                    "test_dynamo_utils_fallback", repo_utils
+                )
+                assert spec is not None and spec.loader is not None  # noqa: S101
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                install_guard_manager_testing_hook = (
+                    module.install_guard_manager_testing_hook
+                )
 
         self.exit_stack = contextlib.ExitStack()
         self.exit_stack.enter_context(
@@ -7128,10 +7144,10 @@ def forward(self, s77 : torch.SymInt, s27 : torch.SymInt, L_x_ : torch.Tensor):
             for backend in ["eager", "aot_eager"]:
                 torch.manual_seed(54321)
             torch.get_device_module(device_type).manual_seed_all(54321)
-                actual = torch.compile(backend=backend, fullgraph=True)(f)(
-                    torch.randn((2, 12, 16, 32, 32))
-                ).sum()
-                self.assertEqual(actual, expected)
+            actual = torch.compile(backend=backend, fullgraph=True)(f)(
+                torch.randn((2, 12, 16, 32, 32))
+            ).sum()
+            self.assertEqual(actual, expected)
 
     def test_incompatible_configs(self):
         with torch._dynamo.config.patch(
