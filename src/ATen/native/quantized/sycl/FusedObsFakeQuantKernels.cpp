@@ -123,8 +123,26 @@ void _calculate_moving_average(
   } else {
     std::tie(x_min, x_max) = at::aminmax(x);
   }
+
+  TORCH_CHECK(
+      running_min.scalar_type() == running_max.scalar_type(),
+      "Expected running_min and running_max to have the same dtype, but got ",
+      running_min.scalar_type(),
+      " and ",
+      running_max.scalar_type(),
+      ".");
+
+  if (x_min.scalar_type() != running_min.scalar_type()) {
+    x_min = x_min.to(running_min.scalar_type());
+    x_max = x_max.to(running_min.scalar_type());
+  }
+
   AT_DISPATCH_FLOATING_TYPES_AND2(
-      at::kBFloat16, at::kHalf, x.scalar_type(), "MovingAverageMinMax", [&] {
+      at::kBFloat16,
+      at::kHalf,
+      running_min.scalar_type(),
+      "MovingAverageMinMax",
+      [&] {
         scalar_t* x_min_data = x_min.data_ptr<scalar_t>();
         scalar_t* x_max_data = x_max.data_ptr<scalar_t>();
         scalar_t* running_min_data = running_min.data_ptr<scalar_t>();
@@ -280,17 +298,26 @@ void _calc_moving_avg_qparams_helper(
     bool symmetric_quant,
     const int64_t size,
     bool per_row_fq = false) {
+  (void)x;
   auto execution_policy = calc_execution_policy(size);
   // auto counter_offset = std::get<0>(execution_policy);
   auto num_groups = std::get<1>(execution_policy);
   auto group_size = std::get<2>(execution_policy);
+
+  TORCH_CHECK(
+      running_min.scalar_type() == running_max.scalar_type(),
+      "Expected running_min and running_max to have the same dtype, but got ",
+      running_min.scalar_type(),
+      " and ",
+      running_max.scalar_type(),
+      ".");
 
   const int64_t* fake_quant_on_data = fake_quant_on.const_data_ptr<int64_t>();
   auto local_range = per_row_fq ? group_size : 1;
   AT_DISPATCH_FLOATING_TYPES_AND2(
       at::kBFloat16,
       at::kHalf,
-      x.scalar_type(),
+      running_min.scalar_type(),
       "ChooseQuantizationParams",
       [&] {
         const scalar_t* running_min_data =
