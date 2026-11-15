@@ -201,6 +201,13 @@ skip_dict = {
         "test_dtypes_linalg_multi_dot_xpu",
         # For CUDA it's skipped explicitly in common_methods_invocations.py in upstream. We can skip it here
         "test_out_mean_xpu_float32",
+        # XPU ops (cholesky_inverse[.out], ormqr[.out], triangular_solve.X)
+        # run through the CPU fallback (XPUFallback.cpp), so the test passes
+        # on the CPU result and reports "Unexpected success". Skip until native
+        # XPU kernels exist
+        "test_out_cholesky_inverse_xpu_float32",
+        "test_out_ormqr_xpu_float32",
+        "test_out_triangular_solve_xpu_float32",
         # FakeTensor mismatch in outputs_alias_inputs for aten.view.default
         # Known upstream issue: https://github.com/pytorch/pytorch/issues/159150
         "test_fake_crossref_backward_amp_nn_functional_bilinear_xpu_float32",
